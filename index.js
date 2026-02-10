@@ -82,40 +82,34 @@ case "AI":
     });
   }
 
-  let aiText = null;
-
-  try {
-    const geminiResponse = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-      {
-        contents: [
-          {
-            parts: [{ text: body.AI }]
-          }
-        ]
+  const geminiResponse = await axios.post(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
+    {
+      contents: [
+        {
+          parts: [{ text: body.AI }]
+        }
+      ]
+    },
+    {
+      params: {
+        key: process.env.GEMINI_API_KEY
       },
-      {
-        params: {
-          key: process.env.GEMINI_API_KEY
-        },
-        timeout: 8000
-      }
-    );
+      timeout: 15000
+    }
+  );
 
-    aiText =
-      geminiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  const aiText =
+    geminiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-  } catch (err) {
-    console.error("Gemini error:", err.response?.data || err.message);
+  if (!aiText) {
+    return res.status(500).json({
+      is_success: false,
+      error: "AI response unavailable"
+    });
   }
 
-  // ✅ FINAL SAFE DECISION
-  if (aiText && aiText.trim().length > 0) {
-    data = aiText.trim().split(/\s+/)[0]; // single word
-  } else {
-    data = "Mumbai"; // stable fallback
-  }
-
+  data = aiText.trim().split(/\s+/)[0];
   break;
 
       default:
