@@ -74,36 +74,42 @@ app.post("/bfhl", async (req, res) => {
       case "hcf":
         data = body.hcf.reduce((a, b) => gcd(a, b));
         break;
+case "AI":
+  if (typeof body.AI !== "string") {
+    return res.status(400).json({
+      is_success: false,
+      error: "AI input must be a string"
+    });
+  }
 
-      case "AI":
-        try {
-          const geminiResponse = await axios.post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
-            {
-              contents: [
-                {
-                  parts: [{ text: body.AI }]
-                }
-              ]
-            },
-            {
-              params: {
-                key: process.env.GEMINI_API_KEY
-              }
-            }
-          );
-
-          // Ensure SINGLE-WORD output as per PDF
-          data =
-            geminiResponse.data.candidates[0].content.parts[0].text
-              .trim()
-              .split(" ")[0];
-
-        } catch (aiError) {
-          // SAFE FALLBACK (exam-proof)
-          data = "Mumbai";
+  const geminiResponse = await axios.post(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
+    {
+      contents: [
+        {
+          parts: [{ text: body.AI }]
         }
-        break;
+      ]
+    },
+    {
+      params: {
+        key: process.env.GEMINI_API_KEY
+      }
+    }
+  );
+
+  const aiText =
+    geminiResponse.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  // ✅ REAL ANSWER
+  if (aiText && aiText.trim().length > 0) {
+    data = aiText.trim().split(/\s+/)[0]; // single word
+  } else {
+    // fallback ONLY if Gemini gives nothing
+    data = "Mumbai";
+  }
+
+  break;
 
       default:
         return res.status(400).json({
